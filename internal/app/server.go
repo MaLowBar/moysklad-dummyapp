@@ -26,7 +26,7 @@ func request(method, url, bearerToken string, body io.Reader) *http.Request {
 		return nil
 	}
 	req.Header = map[string][]string{
-		"Authorization": {"Bearer" + bearerToken},
+		"Authorization": {"Bearer " + bearerToken},
 		"Content-Type":  {"application/json"},
 	}
 	return req
