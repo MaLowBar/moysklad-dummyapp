@@ -1,6 +1,0 @@
-app_id: 5f3c5489-6a17-48b7-9fe5-b2000eb807fe
-app_uid: MyTest App
-secret_key: sdfja33sdlkfj
-app_base_url: /api/moysklad/vendor/1.0/apps/:appId/:accountId
-moysklad_vendor_api_endpoint_url: https://online.moysklad.ru/api/vendor/1.0
-moysklad_json_api_endpoint_url: https://online.moysklad.ru/api/remap/1.2
