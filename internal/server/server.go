@@ -58,31 +58,6 @@ func NewServer() (*Server, error) {
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	//files, err := os.ReadDir("internal/app")
-	//if err != nil {
-	//	log.Println(err)
-	//}
-	//
-	//for _, file := range files {
-	//	var a dummy.Dummy
-	//
-	//	if strings.HasSuffix(file.Name(), ".app") {
-	//		log.Println(file.Name())
-	//		data, err := os.ReadFile("internal/app/" + file.Name())
-	//		if err != nil {
-	//			log.Println(err)
-	//			break
-	//		}
-	//		if err = yaml.Unmarshal(data, &a.BaseApp); err != nil {
-	//			log.Println(err)
-	//			break
-	//		}
-	//
-	//		if a.Status != app.StatusInactive {
-	//			s.Apps = append(s.Apps, &a)
-	//		}
-	//	}
-	//}
 
 	return s, nil
 }
