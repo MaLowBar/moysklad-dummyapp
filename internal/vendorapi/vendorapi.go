@@ -3,6 +3,7 @@ package vendorapi
 import (
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -49,7 +50,7 @@ func vendorRequest(method, url, appUid string, body io.Reader) *http.Request {
 	return jsonapi.Request(method, url, tokenString, body)
 }
 
-func GetContext(appUid, contextKey string) *UserContext {
+func GetContext(appUid, contextKey string) (*UserContext, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	url := baseUrl + "/context/" + contextKey //"http://localhost:8080/ctx"
@@ -57,22 +58,21 @@ func GetContext(appUid, contextKey string) *UserContext {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	var rawCtx map[string]interface{}
 	if resp.Status == "200 OK" {
 		if err = json.NewDecoder(resp.Body).Decode(&rawCtx); err != nil {
-			log.Println(err)
-			return nil
+			return nil, err
 		}
 		ctx := new(UserContext)
 		ctx.Uid = rawCtx["uid"].(string)
 		ctx.Fio = rawCtx["shortFio"].(string)
 		ctx.AccountId = rawCtx["accountId"].(string)
 		ctx.IsAdmin = rawCtx["permissions"].(map[string]interface{})["admin"].(map[string]interface{})["view"].(string)
-		return ctx
+		return ctx, nil
 	}
-	return nil
+	return nil, errors.New(resp.Status)
 }

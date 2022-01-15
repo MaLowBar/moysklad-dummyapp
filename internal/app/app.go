@@ -1,10 +1,8 @@
 package app
 
 import (
-	"encoding/json"
-	"fmt"
-	"gopkg.in/yaml.v2"
-	"log"
+	"database/sql"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"os"
 )
 
@@ -32,28 +30,42 @@ func (ba *BaseApp) GetBaseApp() *BaseApp {
 	return ba
 }
 
-func LoadBaseApp(appId, appUid, accountId, accessToken string) (*BaseApp, error) {
-	filePath := fmt.Sprintf("internal/app/%s.%s.app", appUid, accountId)
-	file, err := os.ReadFile(filePath)
-	if err != nil {
-		log.Println(err)
+func LoadBaseApp(appId, appUid, accountId, accessToken string, db *sql.DB) (*BaseApp, error) {
+	var (
+		a BaseApp
+		aId int
+	)
+	row := db.QueryRow(`SELECT * FROM baseapp WHERE app_id = $1 AND account_id = $2`, appId, accountId)
+	err := row.Scan(&aId, &a.AppId, &a.AppUid, &a.AccountId, &a.Status, &a.AccessToken, &a.SecretKey)
+
+	if err != nil && err != sql.ErrNoRows{
+		return nil, err
+	} else if err == sql.ErrNoRows {
 		secretKey, _ := os.ReadFile("internal/" + appUid + "/secret.key")
-		a := BaseApp{AppId: appId,
-			AppUid:      appUid,
-			AccountId:   accountId,
-			Status:      StatusActivated,
-			AccessToken: accessToken,
-			SecretKey:   string(secretKey)}
-		data, _ := yaml.Marshal(a)
-		if err = os.WriteFile(filePath, data, 0666); err != nil {
-			return &BaseApp{}, err
+		ins := "INSERT INTO baseapp (app_id, app_uid, account_id, status, access_token, secret_key) VALUES ($1, $2, $3, $4, $5, $6)"
+		_, err = db.Exec(ins, appId, appUid, accountId, StatusSettingsRequired, accessToken, string(secretKey))
+		if err != nil {
+			return nil, err
 		}
+
+		a.AppId = appId
+		a.AppUid = appUid
+		a.AccountId = accountId
+		a.Status = StatusSettingsRequired
+		a.AccessToken = accessToken
+		a.SecretKey = string(secretKey)
 		return &a, nil
 	}
-	a := BaseApp{}
-	if err = json.Unmarshal(file, &a); err != nil {
-		return &BaseApp{}, err
+	if err = row.Err(); err != nil {
+		return nil, err
 	}
-	a.Status = StatusActivated
+	if a.Status == StatusInactive {
+		a.Status = StatusSettingsRequired
+		a.AccessToken = accessToken
+		_, err := db.Exec("UPDATE baseapp SET status = 'SettingsRequired', access_token = $1 WHERE id = $2", accessToken, aId)
+		if err != nil {
+			return &a, err
+		}
+	}
 	return &a, nil
 }

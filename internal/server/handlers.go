@@ -34,7 +34,7 @@ func (s *Server) ActivateHandler(c *gin.Context) {
 	currentApp, err := s.addApp(c.Param("appId"), c.Param("accountId"), req)
 
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(err)
 		c.JSON(http.StatusInternalServerError, nil)
 		return
 	}
@@ -46,6 +46,12 @@ func (s *Server) DeleteHandler(c *gin.Context) {
 	c.Header("Content-Type", "application/json")
 	for i, a := range s.Apps {
 		if a.GetBaseApp().AppId == c.Param("appId") && a.GetBaseApp().AccountId == c.Param("accountId") {
+			a.GetBaseApp().Status = app.StatusInactive
+			upd := "UPDATE baseapp SET status = 'Inactive' WHERE app_id = $1 AND account_id = $2"
+			_, err := s.db.Exec(upd, c.Param("appId"), c.Param("accountId"))
+			if err != nil {
+				log.Println(err)
+			}
 			s.Apps = append(s.Apps[:i], s.Apps[i+1:]...)
 			c.Status(http.StatusOK)
 			return
@@ -65,9 +71,9 @@ func (s *Server) StatusHandler(c *gin.Context) {
 }
 
 func (s *Server) IframeHandler(c *gin.Context) {
-	userContext := vendorapi.GetContext(c.Param("appUid"), c.Query("contextKey"))
-	if userContext == nil {
-		log.Println("Something bad happened while get context :(")
+	userContext, err := vendorapi.GetContext(c.Param("appUid"), c.Query("contextKey"))
+	if err != nil {
+		log.Println(err)
 	}
 	var currentApp app.App
 	for _, a := range s.Apps {
@@ -80,7 +86,7 @@ func (s *Server) IframeHandler(c *gin.Context) {
 	case "dummy-sloudel.sorochinsky":
 		htmlParams, err := currentApp.(*dummy.Dummy).RenderIframe(userContext)
 		if err != nil {
-			log.Println(err.Error())
+			log.Println(err)
 			c.Status(http.StatusInternalServerError)
 			return
 		}
@@ -97,10 +103,15 @@ func (s *Server) UpdateSettingsHandler(c *gin.Context) {
 	case "dummy-sloudel.sorochinsky":
 		for _, a := range s.Apps {
 			if a.GetBaseApp().AppUid == c.Param("appUid") && a.GetBaseApp().AccountId == c.PostForm("accountId") {
-				a.(*dummy.Dummy).UpdateSettings(c.PostForm("infoMessage"), c.PostForm("store"))
+				err := a.(*dummy.Dummy).UpdateSettings(c.PostForm("infoMessage"), c.PostForm("store"), s.db)
+				if err != nil {
+					log.Println(err)
+					c.Status(http.StatusInternalServerError)
+					return
+				}
 			}
 		}
-		c.Redirect(http.StatusFound, "/echo/iframe/"+c.Param("appUid"))
+		c.Writer.Write([]byte("Настройки обновлены, перезагрузите приложение"))
 	default:
 		log.Println("Invalid AppUid: " + c.Param("appUid"))
 		c.Status(http.StatusInternalServerError)
