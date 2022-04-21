@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-dummyapp-moysklad/internal/app"
 	"go-dummyapp-moysklad/internal/dummy-sloudel.sorochinsky"
-	"go-dummyapp-moysklad/internal/vendorapi"
+	"go-dummyapp-moysklad/vendorapi"
 	"log"
 	"net/http"
 )

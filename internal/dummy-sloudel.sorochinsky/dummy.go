@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"go-dummyapp-moysklad/internal/app"
-	"go-dummyapp-moysklad/internal/jsonapi"
-	"go-dummyapp-moysklad/internal/vendorapi"
+	"go-dummyapp-moysklad/jsonapi"
+	"go-dummyapp-moysklad/vendorapi"
 )
 
 type Dummy struct {
@@ -23,7 +23,7 @@ func LoadDummyApp(baseApp app.BaseApp, db *sql.DB) (*Dummy, error) {
 	query := "SELECT info_message, store FROM dummyapp WHERE baseapp_id = (SELECT id FROM baseapp WHERE app_id = $1 AND account_id = $2)"
 	row := db.QueryRow(query, baseApp.AppId, baseApp.AccountId)
 	err := row.Scan(&da.InfoMessage, &da.Store)
-	if err != nil && err != sql.ErrNoRows{
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
 	} else if err == sql.ErrNoRows {
 		ins := "INSERT INTO dummyapp VALUES ((SELECT id FROM baseapp WHERE app_id = $1 AND account_id = $2), $3, $4)"
@@ -58,7 +58,7 @@ func (d *Dummy) RenderIframe(userCtx *vendorapi.UserContext) (map[string]interfa
 	}, nil
 }
 
-func (d *Dummy) UpdateSettings(infoMessage, store string, db *sql.DB) error{
+func (d *Dummy) UpdateSettings(infoMessage, store string, db *sql.DB) error {
 	if d.Status == app.StatusSettingsRequired {
 		d.Status = app.StatusActivated
 		upd := "UPDATE baseapp SET status = 'Activated' WHERE app_id = $1 AND account_id = $2"

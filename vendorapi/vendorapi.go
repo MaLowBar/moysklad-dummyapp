@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"go-dummyapp-moysklad/internal/jsonapi"
+	"go-dummyapp-moysklad/jsonapi"
 	"io"
 	"log"
 	"net/http"
